@@ -1,0 +1,15 @@
+#include "menu.h"
+
+Menu MENU
+{
+	POPUP "&File"
+	{
+		MENUITEM "&Open", ID_OPEN
+		MENUITEM "&Endpoint", ID_EPOINT
+		MENUITEM "&Interface", ID_IFACE
+		MENUITEM "&Transfer", ID_TRANSFER
+		MENUITEM "&Start timer", ID_START
+		MENUITEM "&Stop timer", ID_STOP
+		MENUITEM "&Exit", ID_EXIT
+	}
+}
