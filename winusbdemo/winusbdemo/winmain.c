@@ -15,6 +15,7 @@ char statustext[100] = "Start";
 char string_manufacturer[100] = "";
 char string_product[100] = "";
 char string_serial[100] = "";
+char string_data[100] = "";
 
 struct usb_bus *bus;
 struct usb_device *device;
@@ -46,102 +47,133 @@ static int loop_back_interrupt(usb_dev_handle *device_handle)
 
 void transfer(void)
 {
-	if (udi_vendor_ep_interrupt_in && udi_vendor_ep_interrupt_out) {
-		sprintf(statustext,"Interrupt enpoint loop back...\n");
-		if (loop_back_interrupt(device_handle)) {
-			sprintf(statustext,"Error during interrupt endpoint transfer\n");
-			usb_close(device_handle);
-			return;
-		}
-		sprintf(statustext,"data: %02X %02X\n",udi_vendor_buf_in[0], udi_vendor_buf_in[1]);
-	}
-}
-
-void openinterface(void)
-{
-	// Open interface vendor
-	if(usb_set_configuration(device_handle, 1) < 0) {
-		sprintf(statustext,"error: setting config 1 failed\n");
-		usb_close(device_handle);
-		return;
-	}
-	if(usb_claim_interface(device_handle, 0) < 0) {
-		sprintf(statustext,"error: claiming interface 0 failed\n");
-		usb_close(device_handle);
-		return;
-	}
-	if (1!=device->config->interface->num_altsetting) {
-
-		if(usb_set_altinterface(device_handle, 1) < 0) {
-			sprintf(statustext,"error: set alternate 1 interface 0 failed\n");
-			usb_close(device_handle);
-			return;
-		}
-	}
-	sprintf(statustext,"Device ready");
-}
-
-void opendevice(void)
-{
-  // Search and open device
-	for(bus = usb_get_busses(); bus; bus = bus->next) {
-		for(device = bus->devices; device; device = device->next) {
-			if(device->descriptor.idVendor == DEVICE_VENDOR_VID
-					&& device->descriptor.idProduct == DEVICE_VENDOR_PID) {
-				device_handle = usb_open(device);
-				break;
-			}
-		}
-	}
-	if(device_handle == NULL)
-    sprintf(statustext,"Device not found");
-  else
+	if (opendevice())
 	{
-    sprintf(statustext,"Device open");
-		if (0!=device->descriptor.iManufacturer)
-			usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_manufacturer, sizeof(string_manufacturer));
-		if (0!=device->descriptor.iProduct)
-			usb_get_string_simple(device_handle, device->descriptor.iProduct, string_product, sizeof(string_product));
-		if (0!=device->descriptor.iSerialNumber)
-			usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_serial, sizeof(string_serial));
+		if (udi_vendor_ep_interrupt_in && udi_vendor_ep_interrupt_out)
+		{
+			sprintf(statustext, "Interrupt enpoint loop back...\n");
+			if (loop_back_interrupt(device_handle)) {
+				sprintf(statustext, "Error during interrupt endpoint transfer\n");
+				usb_close(device_handle);
+				device_handle = NULL;
+				udi_vendor_ep_interrupt_in = 0;
+				udi_vendor_ep_interrupt_out = 0;
+				return;
+			}
+			sprintf(string_data, "data: %02X %02X\n", udi_vendor_buf_in[0], udi_vendor_buf_in[1]);
+		}
 	}
 }
 
 void findendpoint(void)
 {
-	unsigned char nb_ep = 0;
-	struct usb_endpoint_descriptor *endpoints;
+	if (opendevice())
+	{
+		sprintf(statustext, "Searching endpoints");
+		unsigned char nb_ep = 0;
+		struct usb_endpoint_descriptor *endpoints;
 
-	if (1==device->config->interface->num_altsetting) {
-		// Old firmwares have no alternate setting
-		nb_ep = device->config->interface->altsetting[0].bNumEndpoints;
-		endpoints = device->config->interface->altsetting[0].endpoint;
-	} else {
-		// The alternate setting has been added to be USB compliance:
-		// 1.2.40 An Isochronous endpoint present in alternate interface 0x00 must have a MaxPacketSize of 0x00
-		// Reference document: Universal Serial Bus Specification, Revision 2.0, Section 5.6.3.
-		nb_ep = device->config->interface->altsetting[1].bNumEndpoints;
-		endpoints = device->config->interface->altsetting[1].endpoint;
-	}
-	while (nb_ep) {
-		nb_ep--;
+		if (1 == device->config->interface->num_altsetting) {
+			// Old firmwares have no alternate setting
+			nb_ep = device->config->interface->altsetting[0].bNumEndpoints;
+			endpoints = device->config->interface->altsetting[0].endpoint;
+		}
+		else {
+			// The alternate setting has been added to be USB compliance:
+			// 1.2.40 An Isochronous endpoint present in alternate interface 0x00 must have a MaxPacketSize of 0x00
+			// Reference document: Universal Serial Bus Specification, Revision 2.0, Section 5.6.3.
+			nb_ep = device->config->interface->altsetting[1].bNumEndpoints;
+			endpoints = device->config->interface->altsetting[1].endpoint;
+		}
+		while (nb_ep) {
+			nb_ep--;
 
-		unsigned char ep_type = endpoints[nb_ep].bmAttributes	& USB_ENDPOINT_TYPE_MASK;
-		unsigned char ep_add = endpoints[nb_ep].bEndpointAddress;
-		unsigned char dir_in = (ep_add & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN;
-		unsigned short ep_size = endpoints[nb_ep].wMaxPacketSize;
+			unsigned char ep_type = endpoints[nb_ep].bmAttributes	& USB_ENDPOINT_TYPE_MASK;
+			unsigned char ep_add = endpoints[nb_ep].bEndpointAddress;
+			unsigned char dir_in = (ep_add & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN;
+			unsigned short ep_size = endpoints[nb_ep].wMaxPacketSize;
 
-		switch (ep_type) {
+			switch (ep_type) {
 			case USB_ENDPOINT_TYPE_INTERRUPT:
 				if (dir_in) {
 					udi_vendor_ep_interrupt_in = ep_add;
-				} else {
-					udi_vendor_ep_interrupt_out= ep_add;
+				}
+				else {
+					udi_vendor_ep_interrupt_out = ep_add;
 				}
 				break;
+			}
+		}
+		sprintf(statustext, "Endpoint in: %02X, out: %02X", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
+	}
+}
+
+int openinterface(void)
+{
+	if (opendevice())
+	{
+		sprintf(statustext, "Initialization device");
+		// Open interface vendor
+		if (usb_set_configuration(device_handle, 1) < 0) {
+			sprintf(statustext, "error: setting config 1 failed\n");
+			usb_close(device_handle);
+			return 0;
+		}
+		if (usb_claim_interface(device_handle, 0) < 0) {
+			sprintf(statustext, "error: claiming interface 0 failed\n");
+			usb_close(device_handle);
+			return 0;
+		}
+		if (1 != device->config->interface->num_altsetting) {
+
+			if (usb_set_altinterface(device_handle, 1) < 0) {
+				sprintf(statustext, "error: set alternate 1 interface 0 failed\n");
+				usb_close(device_handle);
+				return 0;
+			}
+		}
+		sprintf(statustext, "Device ready");
+		findendpoint();
+		return 1;
+	}
+	else
+		return 0;
+}
+
+int opendevice(void)
+{
+	if (device_handle == NULL)
+	{
+		sprintf(statustext, "Opening");
+		usb_find_devices(); // find all connected devices
+		// Search and open device
+		for (bus = usb_get_busses(); bus; bus = bus->next) {
+			for (device = bus->devices; device; device = device->next) {
+				if (device->descriptor.idVendor == DEVICE_VENDOR_VID
+					&& device->descriptor.idProduct == DEVICE_VENDOR_PID) {
+					device_handle = usb_open(device);
+					break;
+				}
+			}
+		}
+		if (device_handle == NULL)
+		{
+			sprintf(statustext, "Device not found");
+			return 0;
+		}
+		else
+		{
+			sprintf(statustext, "Device open");
+			if (0 != device->descriptor.iManufacturer)
+				usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_manufacturer, sizeof(string_manufacturer));
+			if (0 != device->descriptor.iProduct)
+				usb_get_string_simple(device_handle, device->descriptor.iProduct, string_product, sizeof(string_product));
+			if (0 != device->descriptor.iSerialNumber)
+				usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_serial, sizeof(string_serial));
+			openinterface();
+			return 1;
 		}
 	}
-	sprintf(statustext,"Endpoint in: %02X, out: %02X", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -165,6 +197,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		TextOut(hdc, 100, 120, string_manufacturer, 100);
 		TextOut(hdc, 100, 140, string_product, 100);
 		TextOut(hdc, 100, 160, string_serial, 100);
+		TextOut(hdc, 100, 180, string_data, 100);
 		EndPaint(hwnd, &ps);
 	}
 		break;
@@ -175,20 +208,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hwnd);
 			break;
 		case ID_OPEN:
-			sprintf(statustext, "Opening");
 			opendevice();
 			InvalidateRect(hwnd, NULL, TRUE);
 			break;
 		case ID_EPOINT:
-			if (device_handle != NULL)
-			{
-				sprintf(statustext, "Searching endpoints");
-				findendpoint();
-				InvalidateRect(hwnd, NULL, TRUE);
-			}
+			findendpoint();
+			InvalidateRect(hwnd, NULL, TRUE);
 			break;
 		case ID_IFACE:
-			sprintf(statustext, "Initialization device");
 			openinterface();
 			InvalidateRect(hwnd, NULL, TRUE);
 			break;
@@ -199,7 +226,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_START:
 			sprintf(statustext, "Start timer");
-			SetTimer(hwnd, 0, 1000, (TIMERPROC)NULL);
+			SetTimer(hwnd, 0, 100, (TIMERPROC)NULL);
 			InvalidateRect(hwnd, NULL, TRUE);
 			break;
 		case ID_STOP:
@@ -217,11 +244,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
-    // Libusb initialization
-  	usb_init();         // initialize the library
-  	usb_find_busses();  // find all busses
-  	usb_find_devices(); // find all connected devices
-
+	// Libusb initialization
+	usb_init();         // initialize the library
+	usb_find_busses();  // find all busses
     // Register the window class.
     const char CLASS_NAME[]  = "Sample Window Class";
 	WNDCLASS wc = {
