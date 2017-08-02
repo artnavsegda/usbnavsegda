@@ -148,11 +148,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
-		case WM_TIMER:
-				transfer();
-				InvalidateRect(hwnd, NULL, TRUE);
-				return 0;
+	case WM_TIMER:
+		transfer();
+		InvalidateRect(hwnd, NULL, TRUE);
+		return 0;
+
     case WM_DESTROY:
+		usb_close(device_handle);
         PostQuitMessage(0);
         return 0;
 

@@ -33,10 +33,6 @@ int main(int argc, char *argv[])
 	usb_dev_handle *device_handle = NULL; // the device handle
 	char string_usb[100];
 
-
-	printf("-------------\n");
-	printf("------ PC tool for ASF vendor class example (V1.3)\n");
-
 	// Libusb initialization
 	printf("Initialization library \"libusb\"...\n");
 	usb_init();         // initialize the library
@@ -153,8 +149,6 @@ int main(int argc, char *argv[])
 	}
 
 	usb_close(device_handle);
-	printf("------ Tests completed.\n");
-	printf("-------------\n");
 	return 1;
 }
 
