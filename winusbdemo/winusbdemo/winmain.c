@@ -146,74 +146,73 @@ void findendpoint(void)
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch (uMsg)
-    {
+	switch (uMsg)
+	{
 	case WM_TIMER:
 		transfer();
 		InvalidateRect(hwnd, NULL, TRUE);
-		return 0;
-
-    case WM_DESTROY:
+		break;
+	case WM_DESTROY:
 		usb_close(device_handle);
-        PostQuitMessage(0);
-        return 0;
-
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
-            TextOut(hdc, 100, 100, statustext, 100);
-			TextOut(hdc, 100, 120, string_manufacturer, 100);
-			TextOut(hdc, 100, 140, string_product, 100);
-			TextOut(hdc, 100, 160, string_serial, 100);
-            EndPaint(hwnd, &ps);
-        }
-        return 0;
-
-    case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
-            case ID_EXIT:
-                DestroyWindow(hwnd);
-                return 0;
-            case ID_OPEN:
-                sprintf(statustext,"Opening");
-                opendevice();
-                InvalidateRect(hwnd, NULL, TRUE);
-                return 0;
-						case ID_EPOINT:
-								if (device_handle != NULL)
-								{
-									sprintf(statustext,"Searching endpoints");
-									findendpoint();
-									InvalidateRect(hwnd, NULL, TRUE);
-								}
-								return 0;
-						case ID_IFACE:
-								sprintf(statustext,"Initialization device");
-								openinterface();
-								InvalidateRect(hwnd, NULL, TRUE);
-								return 0;
-						case ID_TRANSFER:
-								sprintf(statustext,"Interrupt endpoint transfer");
-								transfer();
-								InvalidateRect(hwnd, NULL, TRUE);
-								return 0;
-						case ID_START:
-								sprintf(statustext,"Start timer");
-								SetTimer(hwnd, 0, 1000, (TIMERPROC) NULL);
-								InvalidateRect(hwnd, NULL, TRUE);
-								return 0;
-						case ID_STOP:
-								sprintf(statustext,"Stop timer");
-								KillTimer(hwnd, 0);
-								InvalidateRect(hwnd, NULL, TRUE);
-								return 0;
-        }
-        return 0;
-    }
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		PostQuitMessage(0);
+		break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
+		TextOut(hdc, 100, 100, statustext, 100);
+		TextOut(hdc, 100, 120, string_manufacturer, 100);
+		TextOut(hdc, 100, 140, string_product, 100);
+		TextOut(hdc, 100, 160, string_serial, 100);
+		EndPaint(hwnd, &ps);
+	}
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case ID_EXIT:
+			DestroyWindow(hwnd);
+			break;
+		case ID_OPEN:
+			sprintf(statustext, "Opening");
+			opendevice();
+			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		case ID_EPOINT:
+			if (device_handle != NULL)
+			{
+				sprintf(statustext, "Searching endpoints");
+				findendpoint();
+				InvalidateRect(hwnd, NULL, TRUE);
+			}
+			break;
+		case ID_IFACE:
+			sprintf(statustext, "Initialization device");
+			openinterface();
+			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		case ID_TRANSFER:
+			sprintf(statustext, "Interrupt endpoint transfer");
+			transfer();
+			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		case ID_START:
+			sprintf(statustext, "Start timer");
+			SetTimer(hwnd, 0, 1000, (TIMERPROC)NULL);
+			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		case ID_STOP:
+			sprintf(statustext, "Stop timer");
+			KillTimer(hwnd, 0);
+			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		}
+		break;
+	default:
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
+	return 0;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
@@ -225,48 +224,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine,
 
     // Register the window class.
     const char CLASS_NAME[]  = "Sample Window Class";
-
 	WNDCLASS wc = {
 		.lpfnWndProc = WindowProc,
 		.hInstance = hInstance,
 		.lpszClassName = CLASS_NAME,
 		.lpszMenuName = "Menu",
 	};
-
     RegisterClass(&wc);
-
-    // Create the window.
-
-    HWND hwnd = CreateWindowEx(
-        0,                              // Optional window styles.
-        CLASS_NAME,                     // Window class
-        "Learn to Program Windows",    // Window text
-        WS_OVERLAPPEDWINDOW,            // Window style
-
-        // Size and position
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-
-        NULL,       // Parent window
-        NULL,       // Menu
-        hInstance,  // Instance handle
-        NULL        // Additional application data
-        );
-
-    if (hwnd == NULL)
-    {
-        return 0;
-    }
-
+    HWND hwnd = CreateWindow(CLASS_NAME, "Window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
     ShowWindow(hwnd, nCmdShow);
-
-    // Run the message loop.
-
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
     return 0;
 }
