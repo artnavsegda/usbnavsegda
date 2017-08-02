@@ -164,9 +164,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hwnd, &ps);
             FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
             TextOut(hdc, 100, 100, statustext, 100);
-						TextOut(hdc, 100, 120, string_manufacturer, 100);
-						TextOut(hdc, 100, 140, string_product, 100);
-						TextOut(hdc, 100, 160, string_serial, 100);
+			TextOut(hdc, 100, 120, string_manufacturer, 100);
+			TextOut(hdc, 100, 140, string_product, 100);
+			TextOut(hdc, 100, 160, string_serial, 100);
             EndPaint(hwnd, &ps);
         }
         return 0;
