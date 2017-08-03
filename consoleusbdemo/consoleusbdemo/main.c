@@ -84,19 +84,19 @@ int openinterface(void)
 	// Open interface vendor
 	if (usb_set_configuration(device_handle, 1) < 0) {
 		printf("error: setting config 1 failed\n");
-		usb_close(device_handle);
+		//usb_close(device_handle);
 		return 0;
 	}
 	if (usb_claim_interface(device_handle, 0) < 0) {
 		printf("error: claiming interface 0 failed\n");
-		usb_close(device_handle);
+		//usb_close(device_handle);
 		return 0;
 	}
 	if (1 != device->config->interface->num_altsetting) {
 
 		if (usb_set_altinterface(device_handle, 1) < 0) {
 			printf("error: set alternate 1 interface 0 failed\n");
-			usb_close(device_handle);
+			//usb_close(device_handle);
 			return 0;
 		}
 	}

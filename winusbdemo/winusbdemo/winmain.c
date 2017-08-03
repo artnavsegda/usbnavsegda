@@ -116,19 +116,19 @@ int openinterface(void)
 		// Open interface vendor
 		if (usb_set_configuration(device_handle, 1) < 0) {
 			sprintf(statustext, "error: setting config 1 failed\n");
-			usb_close(device_handle);
+			//usb_close(device_handle);
 			return 0;
 		}
 		if (usb_claim_interface(device_handle, 0) < 0) {
 			sprintf(statustext, "error: claiming interface 0 failed\n");
-			usb_close(device_handle);
+			//usb_close(device_handle);
 			return 0;
 		}
 		if (1 != device->config->interface->num_altsetting) {
 
 			if (usb_set_altinterface(device_handle, 1) < 0) {
 				sprintf(statustext, "error: set alternate 1 interface 0 failed\n");
-				usb_close(device_handle);
+				//usb_close(device_handle);
 				return 0;
 			}
 		}
@@ -147,12 +147,22 @@ int opendevice(void)
 		sprintf(statustext, "Opening");
 		usb_find_devices(); // find all connected devices
 		// Search and open device
-		for (bus = usb_get_busses(); bus; bus = bus->next) {
-			for (device = bus->devices; device; device = device->next) {
-				if (device->descriptor.idVendor == DEVICE_VENDOR_VID
-					&& device->descriptor.idProduct == DEVICE_VENDOR_PID) {
+		for (bus = usb_get_busses(); bus; bus = bus->next)
+		{
+			for (device = bus->devices; device; device = device->next)
+			{
+				if (device->descriptor.idVendor == DEVICE_VENDOR_VID && device->descriptor.idProduct == DEVICE_VENDOR_PID)
+				{
 					device_handle = usb_open(device);
-					break;
+					sprintf(statustext, "Device open");
+					if (0 != device->descriptor.iManufacturer)
+						usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_manufacturer, sizeof(string_manufacturer));
+					if (0 != device->descriptor.iProduct)
+						usb_get_string_simple(device_handle, device->descriptor.iProduct, string_product, sizeof(string_product));
+					if (0 != device->descriptor.iSerialNumber)
+						usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_serial, sizeof(string_serial));
+					openinterface();
+					return 1;
 				}
 			}
 		}
@@ -161,19 +171,8 @@ int opendevice(void)
 			sprintf(statustext, "Device not found");
 			return 0;
 		}
-		else
-		{
-			sprintf(statustext, "Device open");
-			if (0 != device->descriptor.iManufacturer)
-				usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_manufacturer, sizeof(string_manufacturer));
-			if (0 != device->descriptor.iProduct)
-				usb_get_string_simple(device_handle, device->descriptor.iProduct, string_product, sizeof(string_product));
-			if (0 != device->descriptor.iSerialNumber)
-				usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_serial, sizeof(string_serial));
-			openinterface();
-			return 1;
-		}
 	}
+	return 1;
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
