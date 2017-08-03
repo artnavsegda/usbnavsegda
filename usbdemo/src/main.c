@@ -124,6 +124,20 @@ int opendevice(void)
 				if (device->descriptor.idVendor == DEVICE_VENDOR_VID && device->descriptor.idProduct == DEVICE_VENDOR_PID)
 				{
 					device_handle = usb_open(device);
+					printf("Device open\n");
+					printf("- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
+					if (0 != device->descriptor.iManufacturer) {
+						usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
+						printf("- Manufacturename: %s\n", string_usb);
+					}
+					if (0 != device->descriptor.iProduct) {
+						usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
+						printf("- Product name: %s\n", string_usb);
+					}
+					if (0 != device->descriptor.iSerialNumber) {
+						usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_usb, sizeof(string_usb));
+						printf("- Serial number: %s\n\n", string_usb);
+					}
 					openinterface();
 					return 1;
 				}

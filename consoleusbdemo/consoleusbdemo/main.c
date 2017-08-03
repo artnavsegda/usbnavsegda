@@ -37,42 +37,42 @@ void findendpoint(void)
 {
 	//if (opendevice())
 	//{
-		printf("Searching endpoints\n");
-		unsigned char nb_ep = 0;
-		struct usb_endpoint_descriptor *endpoints;
+	printf("Searching endpoints\n");
+	unsigned char nb_ep = 0;
+	struct usb_endpoint_descriptor *endpoints;
 
-		if (1 == device->config->interface->num_altsetting) {
-			// Old firmwares have no alternate setting
-			nb_ep = device->config->interface->altsetting[0].bNumEndpoints;
-			endpoints = device->config->interface->altsetting[0].endpoint;
-		}
-		else {
-			// The alternate setting has been added to be USB compliance:
-			// 1.2.40 An Isochronous endpoint present in alternate interface 0x00 must have a MaxPacketSize of 0x00
-			// Reference document: Universal Serial Bus Specification, Revision 2.0, Section 5.6.3.
-			nb_ep = device->config->interface->altsetting[1].bNumEndpoints;
-			endpoints = device->config->interface->altsetting[1].endpoint;
-		}
-		while (nb_ep) {
-			nb_ep--;
+	if (1 == device->config->interface->num_altsetting) {
+		// Old firmwares have no alternate setting
+		nb_ep = device->config->interface->altsetting[0].bNumEndpoints;
+		endpoints = device->config->interface->altsetting[0].endpoint;
+	}
+	else {
+		// The alternate setting has been added to be USB compliance:
+		// 1.2.40 An Isochronous endpoint present in alternate interface 0x00 must have a MaxPacketSize of 0x00
+		// Reference document: Universal Serial Bus Specification, Revision 2.0, Section 5.6.3.
+		nb_ep = device->config->interface->altsetting[1].bNumEndpoints;
+		endpoints = device->config->interface->altsetting[1].endpoint;
+	}
+	while (nb_ep) {
+		nb_ep--;
 
-			unsigned char ep_type = endpoints[nb_ep].bmAttributes	& USB_ENDPOINT_TYPE_MASK;
-			unsigned char ep_add = endpoints[nb_ep].bEndpointAddress;
-			unsigned char dir_in = (ep_add & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN;
-			unsigned short ep_size = endpoints[nb_ep].wMaxPacketSize;
+		unsigned char ep_type = endpoints[nb_ep].bmAttributes	& USB_ENDPOINT_TYPE_MASK;
+		unsigned char ep_add = endpoints[nb_ep].bEndpointAddress;
+		unsigned char dir_in = (ep_add & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN;
+		unsigned short ep_size = endpoints[nb_ep].wMaxPacketSize;
 
-			switch (ep_type) {
-			case USB_ENDPOINT_TYPE_INTERRUPT:
-				if (dir_in) {
-					udi_vendor_ep_interrupt_in = ep_add;
-				}
-				else {
-					udi_vendor_ep_interrupt_out = ep_add;
-				}
-				break;
+		switch (ep_type) {
+		case USB_ENDPOINT_TYPE_INTERRUPT:
+			if (dir_in) {
+				udi_vendor_ep_interrupt_in = ep_add;
 			}
+			else {
+				udi_vendor_ep_interrupt_out = ep_add;
+			}
+			break;
 		}
-		printf("Endpoint in: %02X, out: %02X\n", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
+	}
+	printf("Endpoint in: %02X, out: %02X\n", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
 	//}
 }
 
@@ -80,77 +80,74 @@ int openinterface(void)
 {
 	//if (opendevice())
 	//{
-		printf("Initialization device\n");
-		// Open interface vendor
-		if (usb_set_configuration(device_handle, 1) < 0) {
-			printf("error: setting config 1 failed\n");
-			usb_close(device_handle);
-			return 0;
-		}
-		if (usb_claim_interface(device_handle, 0) < 0) {
-			printf("error: claiming interface 0 failed\n");
-			usb_close(device_handle);
-			return 0;
-		}
-		if (1 != device->config->interface->num_altsetting) {
+	printf("Initialization device\n");
+	// Open interface vendor
+	if (usb_set_configuration(device_handle, 1) < 0) {
+		printf("error: setting config 1 failed\n");
+		usb_close(device_handle);
+		return 0;
+	}
+	if (usb_claim_interface(device_handle, 0) < 0) {
+		printf("error: claiming interface 0 failed\n");
+		usb_close(device_handle);
+		return 0;
+	}
+	if (1 != device->config->interface->num_altsetting) {
 
-			if (usb_set_altinterface(device_handle, 1) < 0) {
-				printf("error: set alternate 1 interface 0 failed\n");
-				usb_close(device_handle);
-				return 0;
-			}
+		if (usb_set_altinterface(device_handle, 1) < 0) {
+			printf("error: set alternate 1 interface 0 failed\n");
+			usb_close(device_handle);
+			return 0;
 		}
-		printf("Device ready\n");
-		findendpoint();
-		return 1;
+	}
+	printf("Device ready\n");
+	findendpoint();
+	return 1;
 	//}
 	//else
-		//return 0;
+	//return 0;
 }
 
 int opendevice(void)
 {
 	if (device_handle == NULL)
 	{
-		//printf("Opening\n");
+		printf("Opening\n");
 		usb_find_devices(); // find all connected devices
-							// Search and open device
-		for (bus = usb_get_busses(); bus; bus = bus->next) {
-			for (device = bus->devices; device; device = device->next) {
-				if (device->descriptor.idVendor == DEVICE_VENDOR_VID
-					&& device->descriptor.idProduct == DEVICE_VENDOR_PID) {
+		// Search and open device
+		for (bus = usb_get_busses(); bus; bus = bus->next)
+		{
+			for (device = bus->devices; device; device = device->next)
+			{
+				printf("- Device filename: %s\n", device->filename);
+				if (device->descriptor.idVendor == DEVICE_VENDOR_VID && device->descriptor.idProduct == DEVICE_VENDOR_PID)
+				{
 					device_handle = usb_open(device);
-					break;
+					printf("Device open\n");
+					printf("- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
+					if (0 != device->descriptor.iManufacturer) {
+						usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
+						printf("- Manufacturename: %s\n", string_usb);
+					}
+					if (0 != device->descriptor.iProduct) {
+						usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
+						printf("- Product name: %s\n", string_usb);
+					}
+					if (0 != device->descriptor.iSerialNumber) {
+						usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_usb, sizeof(string_usb));
+						printf("- Serial number: %s\n\n", string_usb);
+					}
+					openinterface();
+					return 1;
 				}
 			}
 		}
 		if (device_handle == NULL)
 		{
-			//printf("Device not found\n");
+			printf("Device not found\n");
 			return 0;
 		}
-		else
-		{
-			printf("Device open\n");
-			printf("- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
-			if (0 != device->descriptor.iManufacturer) {
-				usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
-				printf("- Manufacturename: %s\n", string_usb);
-			}
-			if (0 != device->descriptor.iProduct) {
-				usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
-				printf("- Product name: %s\n", string_usb);
-			}
-			if (0 != device->descriptor.iSerialNumber) {
-				usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_usb, sizeof(string_usb));
-				printf("- Serial number: %s\n\n", string_usb);
-			}
-			openinterface();
-			return 1;
-		}
 	}
-	else
-		return 0;
 }
 
 void transfer(void)
@@ -193,132 +190,6 @@ int main(int argc, char *argv[])
 	}
 
 }
-
-/*
-
-
-	usb_find_devices(); // find all connected devices
-
-						// Search and open device
-	printf("Search device...\n");
-	for (bus = usb_get_busses(); bus; bus = bus->next) {
-		for (device = bus->devices; device; device = device->next) {
-			if (device->descriptor.idVendor == DEVICE_VENDOR_VID
-				&& device->descriptor.idProduct == DEVICE_VENDOR_PID) {
-				device_handle = usb_open(device);
-				break;
-			}
-		}
-	}
-	if (device_handle == NULL) {
-		printf("error: device not found!\n");
-		return 0;
-	}
-	printf("USB Device of ASF vendor class example found:\n");
-	printf("- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
-	if (0 != device->descriptor.iManufacturer) {
-		usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
-		printf("- Manufacturename: %s\n", string_usb);
-	}
-	if (0 != device->descriptor.iProduct) {
-		usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
-		printf("- Product name: %s\n", string_usb);
-	}
-	if (0 != device->descriptor.iSerialNumber) {
-		usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_usb, sizeof(string_usb));
-		printf("- Serial number: %s\n\n", string_usb);
-	}
-
-	printf("- Endpoint list:\n");
-	udi_vendor_ep_interrupt_in = 0;
-	udi_vendor_ep_interrupt_out = 0;
-
-	unsigned char nb_ep = 0;
-	struct usb_endpoint_descriptor *endpoints;
-	if (1 == device->config->interface->num_altsetting) {
-		// Old firmwares have no alternate setting
-		nb_ep = device->config->interface->altsetting[0].bNumEndpoints;
-		endpoints = device->config->interface->altsetting[0].endpoint;
-	}
-	else {
-		// The alternate setting has been added to be USB compliance:
-		// 1.2.40 An Isochronous endpoint present in alternate interface 0x00 must have a MaxPacketSize of 0x00
-		// Reference document: Universal Serial Bus Specification, Revision 2.0, Section 5.6.3.
-		nb_ep = device->config->interface->altsetting[1].bNumEndpoints;
-		endpoints = device->config->interface->altsetting[1].endpoint;
-	}
-	while (nb_ep) {
-		nb_ep--;
-
-		unsigned char ep_type = endpoints[nb_ep].bmAttributes
-			& USB_ENDPOINT_TYPE_MASK;
-		unsigned char ep_add = endpoints[nb_ep].bEndpointAddress;
-		unsigned char dir_in = (ep_add & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_IN;
-		unsigned short ep_size = endpoints[nb_ep].wMaxPacketSize;
-
-		switch (ep_type) {
-		case USB_ENDPOINT_TYPE_INTERRUPT:
-			if (dir_in) {
-				udi_vendor_ep_interrupt_in = ep_add;
-			}
-			else {
-				udi_vendor_ep_interrupt_out = ep_add;
-			}
-			break;
-		}
-	}
-	if (udi_vendor_ep_interrupt_in)
-		printf("  - Endpoint interrupt IN:  %02X\n", udi_vendor_ep_interrupt_in);
-	if (udi_vendor_ep_interrupt_out)
-		printf("  - Endpoint interrupt OUT: %02X\n", udi_vendor_ep_interrupt_out);
-
-	// Open interface vendor
-	printf("Initialization device...\n");
-	if (usb_set_configuration(device_handle, 1) < 0) {
-		printf("error: setting config 1 failed\n");
-		usb_close(device_handle);
-		return 0;
-	}
-	if (usb_claim_interface(device_handle, 0) < 0) {
-		printf("error: claiming interface 0 failed\n");
-		usb_close(device_handle);
-		return 0;
-	}
-	if (1 != device->config->interface->num_altsetting) {
-
-		if (usb_set_altinterface(device_handle, 1) < 0) {
-			printf("error: set alternate 1 interface 0 failed\n");
-			usb_close(device_handle);
-			return 0;
-		}
-	}
-
-	if (udi_vendor_ep_interrupt_in && udi_vendor_ep_interrupt_out) {
-		printf("Interrupt enpoint loop back...\n");
-		init_buffers();
-		while (1)
-		{
-			if (loop_back_interrupt(device_handle)) {
-				printf("Error during interrupt endpoint transfer\n");
-				usb_close(device_handle);
-				return 0;
-			}
-			printf("data: %02X %02X\n", udi_vendor_buf_in[0], udi_vendor_buf_in[1]);
-			Sleep(1000);
-		}
-	}
-
-	usb_close(device_handle);
-	return 1;
-}
-
-static void init_buffers(void)
-{
-	int i;
-	// Reset buffer IN
-	memset(udi_vendor_buf_in, 0x55, sizeof(udi_vendor_buf_in));
-}
-*/
 
 static int loop_back_interrupt(usb_dev_handle *device_handle)
 {
