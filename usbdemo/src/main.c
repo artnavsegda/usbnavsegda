@@ -120,7 +120,6 @@ int opendevice(void)
 		{
 			for (device = bus->devices; device; device = device->next)
 			{
-				printf("- Device filename: %s\n", device->filename);
 				if (device->descriptor.idVendor == DEVICE_VENDOR_VID && device->descriptor.idProduct == DEVICE_VENDOR_PID)
 				{
 					device_handle = usb_open(device);
