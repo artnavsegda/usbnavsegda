@@ -128,7 +128,7 @@ int opendevice(void)
 					printf("- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
 					if (0 != device->descriptor.iManufacturer) {
 						usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
-						printf("- Manufacturename: %s\n", string_usb);
+						printf("- Manufacturer name: %s\n", string_usb);
 					}
 					if (0 != device->descriptor.iProduct) {
 						usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
