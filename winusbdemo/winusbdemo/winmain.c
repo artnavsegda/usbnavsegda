@@ -41,6 +41,10 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lPara
 			EndDialog(hwndDlg, wParam);
 			return TRUE;
 			break;
+		case ID_DIALOG_TRANSFER:
+			// something
+			return FALSE;
+			break;
 		default:
 			break;
 		}
