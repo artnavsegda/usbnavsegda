@@ -10,6 +10,7 @@ Menu MENU
 		MENUITEM "&Transfer", ID_TRANSFER
 		MENUITEM "&Start timer", ID_START
 		MENUITEM "&Stop timer", ID_STOP
+		MENUITEM "&Dialog", ID_DIALOG
 		MENUITEM "&Exit", ID_EXIT
 	}
 }

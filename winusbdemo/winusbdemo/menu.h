@@ -5,3 +5,4 @@
 #define ID_TRANSFER 4
 #define ID_START 5
 #define ID_STOP 6
+#define ID_DIALOG 7

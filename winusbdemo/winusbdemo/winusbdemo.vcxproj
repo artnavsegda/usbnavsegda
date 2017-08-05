@@ -143,10 +143,12 @@
     <ClCompile Include="winmain.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dialog.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="usb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="dialog.rc" />
     <ResourceCompile Include="menu.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

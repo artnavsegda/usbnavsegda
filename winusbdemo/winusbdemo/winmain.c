@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "usb.h"
 #include "menu.h"
+#include "dialog.h"
 
 #define DEVICE_VENDOR_VID 0x03eb
 #define DEVICE_VENDOR_PID 0x2423
@@ -25,6 +26,28 @@ usb_dev_handle *device_handle = NULL; // the device handle
 
 uint8_t udi_vendor_buf_out[UDI_VENDOR_LOOPBACK_SIZE] = "hello world";
 uint8_t udi_vendor_buf_in[UDI_VENDOR_LOOPBACK_SIZE];
+
+BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	char workstring[100];
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case ID_DIALOG_EXIT:
+			EndDialog(hwndDlg, wParam);
+			return TRUE;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+	return FALSE;
+}
 
 static int loop_back_interrupt(usb_dev_handle *device_handle)
 {
@@ -232,6 +255,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			sprintf(statustext, "Stop timer");
 			KillTimer(hwnd, 0);
 			InvalidateRect(hwnd, NULL, TRUE);
+			break;
+		case ID_DIALOG:
+			DialogBox(GetModuleHandle(NULL), "MainDialog", hwnd, (DLGPROC)DialogFunc);
 			break;
 		}
 		break;
