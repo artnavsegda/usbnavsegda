@@ -42,6 +42,7 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lPara
 			return TRUE;
 			break;
 		case ID_DIALOG_TRANSFER:
+			SetDlgItemText(hwndDlg, ID_DIALOG_TEXT, "Bang");
 			// something
 			return FALSE;
 			break;
