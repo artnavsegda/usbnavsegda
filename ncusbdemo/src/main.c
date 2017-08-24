@@ -36,13 +36,13 @@ static int loop_back_interrupt(usb_dev_handle *device_handle);
 
 int opendevice(void);
 
-int x=10,y=10;
+int x=0,y=5;
 
 void findendpoint(void)
 {
 	//if (opendevice())
 	//{
-		clear();
+		//clear();
 		mvprintw(y,x,"Searching endpoints\n");
 		refresh();
 		unsigned char nb_ep = 0;
@@ -79,8 +79,8 @@ void findendpoint(void)
 				break;
 			}
 		}
-		clear();
-		mvprintw(y,x,"Endpoint in: %02X, out: %02X\n", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
+		//clear();
+		mvprintw(4,0,"Endpoint in: %02X, out: %02X\n", udi_vendor_ep_interrupt_in, udi_vendor_ep_interrupt_out);
 		refresh();
 	//}
 }
@@ -89,7 +89,7 @@ int openinterface(void)
 {
 	//if (opendevice())
 	//{
-		clear();
+		//clear();
 		mvprintw(y,x,"Initialization device\n");
 		refresh();
 		// Open interface vendor
@@ -117,7 +117,7 @@ int openinterface(void)
 				return 0;
 			}
 		}
-		clear();
+		//clear();
 		mvprintw(y,x,"Device ready\n");
 		refresh();
 		findendpoint();
@@ -145,18 +145,18 @@ int opendevice(void)
 					device_handle = usb_open(device);
 					clear();
 					mvprintw(y,x,"Device open\n");
-					mvprintw(20,20,"- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
+					mvprintw(0,0,"- Device version: %d.%d\n", device->descriptor.bcdDevice >> 8, (device->descriptor.bcdDevice & 0xFF));
 					if (0 != device->descriptor.iManufacturer) {
 						usb_get_string_simple(device_handle, device->descriptor.iManufacturer, string_usb, sizeof(string_usb));
-						mvprintw(21,20,"- Manufacturer name: %s\n", string_usb);
+						mvprintw(1,0,"- Manufacturer name: %s\n", string_usb);
 					}
 					if (0 != device->descriptor.iProduct) {
 						usb_get_string_simple(device_handle, device->descriptor.iProduct, string_usb, sizeof(string_usb));
-						mvprintw(22,20,"- Product name: %s\n", string_usb);
+						mvprintw(2,0,"- Product name: %s\n", string_usb);
 					}
 					if (0 != device->descriptor.iSerialNumber) {
 						usb_get_string_simple(device_handle, device->descriptor.iSerialNumber, string_usb, sizeof(string_usb));
-						mvprintw(23,20,"- Serial number: %s\n\n", string_usb);
+						mvprintw(3,0,"- Serial number: %s\n\n", string_usb);
 					}
 					refresh();
 					openinterface();
@@ -192,7 +192,7 @@ void transfer(void)
 				udi_vendor_ep_interrupt_out = 0;
 				return;
 			}
-			clear();
+			//clear();
 			mvprintw(y,x,"data: %02X %02X\n", udi_vendor_buf_in[0], udi_vendor_buf_in[1]);
 			refresh();
 		}
